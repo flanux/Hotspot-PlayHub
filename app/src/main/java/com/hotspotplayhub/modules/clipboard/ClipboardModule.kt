@@ -34,7 +34,7 @@ class ClipboardModule(private val server: Server) : Module {
             )
             
             // Broadcast to all clients
-            server.broadcast(packet)
+            server.broadcast(packet.toBytes())
             
             onClipboardReceived?.invoke(clipboardData)
             

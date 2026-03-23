@@ -29,7 +29,7 @@ class PhoneFinderModule(private val server: Server) : Module {
             Log.d(TAG, "Ring request from ${fromPlayer.name} for player $targetPlayerId")
             
             // Send ring command to specific player
-            server.sendToPlayer(targetPlayerId, packet)
+            server.sendToPlayer(targetPlayerId, packet.toBytes())
             
             onRingRequested?.invoke(targetPlayerId)
         }

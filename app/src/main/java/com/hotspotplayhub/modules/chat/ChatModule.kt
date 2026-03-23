@@ -39,7 +39,7 @@ class ChatModule(private val server: Server) : Module {
             messages.add(message)
             
             // Broadcast to all clients
-            server.broadcast(packet)
+            server.broadcast(packet.toBytes())
             
             onMessageReceived?.invoke(message)
             

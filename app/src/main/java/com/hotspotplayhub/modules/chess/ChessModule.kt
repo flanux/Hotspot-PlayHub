@@ -141,7 +141,7 @@ class ChessModule(private val server: Server) : Module {
             0, // Server
             state
         )
-        server.broadcast(packet)
+        server.broadcast(packet.toBytes())
         
         onGameStateChanged?.invoke(GameState(board, currentTurn))
     }
