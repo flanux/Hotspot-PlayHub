@@ -21,6 +21,7 @@ object PacketProtocol {
     const val TYPE_LOBBY_UPDATE: Byte = 0x08
     const val TYPE_MODULE_SWITCH: Byte = 0x09
     const val TYPE_HEARTBEAT: Byte = 0x0A
+    const val TYPE_SCRIBBLE: Byte = 0x0B
     
     const val HEADER_SIZE = 4 // Type + PlayerID + Length
     

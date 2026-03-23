@@ -29,7 +29,18 @@
         android:layout_height="wrap_content"
         android:text="Join Session"
         android:textSize="18sp"
-        android:padding="12dp" />
+        android:padding="12dp"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnScribble"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Play Scribble"
+        android:textSize="18sp"
+        android:padding="12dp"
+        android:enabled="false"
+        android:alpha="0.5" />
 
     <TextView
         android:id="@+id/tvInfo"

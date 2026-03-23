@@ -1,5 +1,6 @@
 package com.hotspotplayhub.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -7,7 +8,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.hotspotplayhub.R
 import com.hotspotplayhub.engine.Client
+import com.hotspotplayhub.engine.PacketProtocol
 import com.hotspotplayhub.engine.Server
+import com.hotspotplayhub.modules.scribble.ScribbleModule
 import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
@@ -15,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     private var server: Server? = null
     private var client: Client? = null
     private var isHosting = false
+    private var scribbleModule: ScribbleModule? = null
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,26 +27,35 @@ class MainActivity : AppCompatActivity() {
         
         val btnHost = findViewById<Button>(R.id.btnHost)
         val btnJoin = findViewById<Button>(R.id.btnJoin)
+        val btnScribble = findViewById<Button>(R.id.btnScribble)
         val tvInfo = findViewById<TextView>(R.id.tvInfo)
         
         btnHost.setOnClickListener {
             if (isHosting) {
-                stopHosting(btnHost, btnJoin, tvInfo)
+                stopHosting(btnHost, btnJoin, btnScribble, tvInfo)
             } else {
-                hostSession(btnHost, btnJoin, tvInfo)
+                hostSession(btnHost, btnJoin, btnScribble, tvInfo)
             }
         }
         
         btnJoin.setOnClickListener {
-            joinSession(tvInfo)
+            joinSession(tvInfo, btnScribble)
+        }
+        
+        btnScribble.setOnClickListener {
+            launchScribble()
         }
     }
     
-    private fun hostSession(btnHost: Button, btnJoin: Button, tvInfo: TextView) {
+    private fun hostSession(btnHost: Button, btnJoin: Button, btnScribble: Button, tvInfo: TextView) {
         try {
             server = Server()
             server?.start()
             isHosting = true
+            
+            // Initialize scribble module
+            scribbleModule = ScribbleModule(server!!)
+            server?.router?.registerModule(PacketProtocol.TYPE_SCRIBBLE, scribbleModule!!)
             
             val hostIp = Server.getLocalIpAddress() ?: "unknown"
             
@@ -51,6 +64,8 @@ class MainActivity : AppCompatActivity() {
             btnHost.setBackgroundColor(getColor(android.R.color.holo_red_dark))
             btnJoin.isEnabled = false
             btnJoin.alpha = 0.5f
+            btnScribble.isEnabled = true
+            btnScribble.alpha = 1.0f
             
             tvInfo.text = "Hosting on: $hostIp:8888\n\nOthers can now join your hotspot and tap 'Join Session'"
             
@@ -62,10 +77,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun stopHosting(btnHost: Button, btnJoin: Button, tvInfo: TextView) {
+    private fun stopHosting(btnHost: Button, btnJoin: Button, btnScribble: Button, tvInfo: TextView) {
         try {
             server?.stop()
             server = null
+            scribbleModule = null
             isHosting = false
             
             // Reset UI
@@ -73,6 +89,8 @@ class MainActivity : AppCompatActivity() {
             btnHost.setBackgroundColor(getColor(com.google.android.material.R.color.design_default_color_primary))
             btnJoin.isEnabled = true
             btnJoin.alpha = 1.0f
+            btnScribble.isEnabled = false
+            btnScribble.alpha = 0.5f
             
             tvInfo.text = "Host creates hotspot\nOthers join WiFi and tap Join"
             
@@ -83,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun joinSession(tvInfo: TextView) {
+    private fun joinSession(tvInfo: TextView, btnScribble: Button) {
         tvInfo.text = "Searching for host..."
         Toast.makeText(this, "Searching for host...", Toast.LENGTH_SHORT).show()
         
@@ -102,6 +120,8 @@ class MainActivity : AppCompatActivity() {
                         withContext(Dispatchers.Main) {
                             if (connected == true) {
                                 tvInfo.text = "Connected to host at $hostIp"
+                                btnScribble.isEnabled = true
+                                btnScribble.alpha = 1.0f
                                 Toast.makeText(this@MainActivity, "Connected to host!", Toast.LENGTH_SHORT).show()
                                 
                                 // Navigate to lobby
@@ -121,6 +141,20 @@ class MainActivity : AppCompatActivity() {
                 tvInfo.text = "Error joining: ${e.message}"
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+    
+    private fun launchScribble() {
+        val intent = Intent(this, ScribbleActivity::class.java)
+        intent.putExtra("isHost", isHosting)
+        intent.putExtra("playerId", if (isHosting) 0.toByte() else 1.toByte())
+        startActivity(intent)
+        
+        // Pass module to activity
+        if (scribbleModule != null) {
+            ScribbleActivity.staticModule = scribbleModule
+            ScribbleActivity.staticServer = server
+            ScribbleActivity.staticClient = client
         }
     }
     
