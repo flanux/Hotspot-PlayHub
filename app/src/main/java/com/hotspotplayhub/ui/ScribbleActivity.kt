@@ -190,12 +190,12 @@ class ScribbleActivity : AppCompatActivity() {
             tvWord.text = roundInfo.word
             layoutDrawingTools.visibility = View.VISIBLE
             layoutGuessInput.visibility = View.GONE
-            drawingView.isEnabled = true
+            drawingView.drawingEnabled = true
         } else {
             tvWord.text = "_".repeat(roundInfo.wordLength).toCharArray().joinToString(" ")
             layoutDrawingTools.visibility = View.GONE
             layoutGuessInput.visibility = View.VISIBLE
-            drawingView.isEnabled = false
+            drawingView.drawingEnabled = false
         }
         
         drawingView.clear()
@@ -323,14 +323,14 @@ class ScribbleActivity : AppCompatActivity() {
                         isDrawer = true
                         layoutDrawingTools.visibility = View.VISIBLE
                         layoutGuessInput.visibility = View.GONE
-                        drawingView.isEnabled = true
+                        drawingView.drawingEnabled = true
                     } else if (data.startsWith("GUESS:")) {
                         val hint = data.substring(6)
                         tvWord.text = hint
                         isDrawer = false
                         layoutDrawingTools.visibility = View.GONE
                         layoutGuessInput.visibility = View.VISIBLE
-                        drawingView.isEnabled = false
+                        drawingView.drawingEnabled = false
                     }
                     drawingView.clear()
                 }
