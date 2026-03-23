@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.hotspotplayhub.R
 import com.hotspotplayhub.engine.Client
+import com.hotspotplayhub.engine.HostDiscovery
 import com.hotspotplayhub.engine.PacketProtocol
 import com.hotspotplayhub.engine.Server
 import com.hotspotplayhub.modules.scribble.ScribbleModule
@@ -19,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private var client: Client? = null
     private var isHosting = false
     private var scribbleModule: ScribbleModule? = null
+    private var discoveryThread: Thread? = null
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +59,13 @@ class MainActivity : AppCompatActivity() {
             scribbleModule = ScribbleModule(server!!)
             server?.router?.registerModule(PacketProtocol.TYPE_SCRIBBLE, scribbleModule!!)
             
+            // Start UDP discovery listener
+            discoveryThread = HostDiscovery.startDiscoveryListener {
+                runOnUiThread {
+                    Toast.makeText(this, "Client discovered!", Toast.LENGTH_SHORT).show()
+                }
+            }
+            
             val hostIp = Server.getLocalIpAddress() ?: "unknown"
             
             // Update UI
@@ -79,6 +88,9 @@ class MainActivity : AppCompatActivity() {
     
     private fun stopHosting(btnHost: Button, btnJoin: Button, btnScribble: Button, tvInfo: TextView) {
         try {
+            discoveryThread?.interrupt()
+            discoveryThread = null
+            
             server?.stop()
             server = null
             scribbleModule = null
@@ -102,13 +114,15 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun joinSession(tvInfo: TextView, btnScribble: Button) {
-        tvInfo.text = "Searching for host..."
-        Toast.makeText(this, "Searching for host...", Toast.LENGTH_SHORT).show()
+        tvInfo.text = "Broadcasting discovery..."
+        Toast.makeText(this, "Looking for host...", Toast.LENGTH_SHORT).show()
         
         scope.launch {
             try {
-                // Try to find the host
-                val hostIp = findHost()
+                // Use UDP broadcast discovery - INSTANT!
+                val hostIp = withContext(Dispatchers.IO) {
+                    HostDiscovery.findHost()
+                }
                 
                 if (hostIp != null) {
                     // Found host, try to connect
@@ -122,19 +136,16 @@ class MainActivity : AppCompatActivity() {
                                 tvInfo.text = "Connected to host at $hostIp"
                                 btnScribble.isEnabled = true
                                 btnScribble.alpha = 1.0f
-                                Toast.makeText(this@MainActivity, "Connected to host!", Toast.LENGTH_SHORT).show()
-                                
-                                // Navigate to lobby
-                                // TODO: Implement lobby fragment
+                                Toast.makeText(this@MainActivity, "Connected!", Toast.LENGTH_SHORT).show()
                             } else {
                                 tvInfo.text = "Failed to connect to host"
-                                Toast.makeText(this@MainActivity, "Failed to connect to host", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, "Connection failed", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 } else {
                     tvInfo.text = "No host found. Make sure you're connected to the host's hotspot."
-                    Toast.makeText(this@MainActivity, "No host found on network", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "No host found", Toast.LENGTH_LONG).show()
                 }
                 
             } catch (e: Exception) {
@@ -150,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("playerId", if (isHosting) 0.toByte() else 1.toByte())
         startActivity(intent)
         
-        // Pass module to activity
+        // Pass module to activity via static
         if (scribbleModule != null) {
             ScribbleActivity.staticModule = scribbleModule
             ScribbleActivity.staticServer = server
@@ -158,61 +169,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Automatically find the host on the network
-     * Tries common hotspot gateway IPs and scans the local subnet
-     */
-    private suspend fun findHost(): String? = withContext(Dispatchers.IO) {
-        val port = 8888
-        
-        // Common Android hotspot gateway IPs to try first
-        val commonIps = listOf(
-            "192.168.43.1",  // Most common Android hotspot
-            "192.168.49.1",  // Some Samsung devices
-            "192.168.45.1",  // Some other devices
-        )
-        
-        // Try common IPs first (faster)
-        for (ip in commonIps) {
-            if (isHostReachable(ip, port)) {
-                return@withContext ip
-            }
-        }
-        
-        // If not found, scan local subnet
-        val localIp = Server.getLocalIpAddress()
-        if (localIp != null) {
-            val subnet = localIp.substringBeforeLast(".")
-            
-            // Scan subnet (but skip our own IP and .0/.255)
-            for (i in 1..254) {
-                val testIp = "$subnet.$i"
-                if (testIp != localIp && isHostReachable(testIp, port)) {
-                    return@withContext testIp
-                }
-            }
-        }
-        
-        return@withContext null
-    }
-    
-    /**
-     * Check if a host is reachable at the given IP and port
-     */
-    private fun isHostReachable(ip: String, port: Int): Boolean {
-        return try {
-            val socket = java.net.Socket()
-            socket.connect(java.net.InetSocketAddress(ip, port), 1000) // 1 second timeout
-            socket.close()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
     override fun onDestroy() {
         super.onDestroy()
         scope.cancel()
+        discoveryThread?.interrupt()
         server?.stop()
         client?.disconnect()
     }

@@ -24,7 +24,7 @@ class DrawingView @JvmOverloads constructor(
     
     var currentColor: Int = Color.BLACK
     var currentStrokeWidth: Float = 8f
-    var drawingEnabled: Boolean = true  // CHANGED FROM isEnabled
+    var drawingEnabled: Boolean = true
     
     var onDrawAction: ((Float, Float) -> Unit)? = null
     
@@ -49,7 +49,7 @@ class DrawingView @JvmOverloads constructor(
     }
     
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!drawingEnabled) return false  // CHANGED FROM isEnabled
+        if (!drawingEnabled) return false
         
         val x = event.x
         val y = event.y
