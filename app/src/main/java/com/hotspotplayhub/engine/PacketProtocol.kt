@@ -66,10 +66,6 @@ object PacketProtocol {
     }
 }
 
-fun Packet.toBytes(): ByteArray {
-    return PacketProtocol.serialize(type, playerId, payload)
-}
-
 /**
  * Packet data class
  */
@@ -94,4 +90,8 @@ data class Packet(
         result = 31 * result + payload.contentHashCode()
         return result
     }
+}
+
+fun Packet.toBytes(): ByteArray {
+    return PacketProtocol.serialize(type, playerId, payload)
 }
