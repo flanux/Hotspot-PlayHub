@@ -1,10 +1,10 @@
 package com.hotspotplayhub.modules.chess
 
-import com.hotspotplayhub.engine.toBytes
 import android.util.Log
 import com.hotspotplayhub.engine.Module
 import com.hotspotplayhub.engine.Packet
 import com.hotspotplayhub.engine.PacketProtocol
+import com.hotspotplayhub.engine.toBytes
 import com.hotspotplayhub.engine.Player
 import com.hotspotplayhub.engine.Server
 
@@ -142,7 +142,7 @@ class ChessModule(private val server: Server) : Module {
             0, // Server
             state
         )
-        server.broadcast(packet.toBytes())
+        server.broadcast(packet) // already in byte form 
         
         onGameStateChanged?.invoke(GameState(board, currentTurn))
     }
