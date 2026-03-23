@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hotspot PlayHub</string>
+    <string name="host_session">Host Session</string>
+    <string name="join_session">Join Session</string>
+    <string name="chat">Chat</string>
+    <string name="chess">Chess</string>
+    <string name="clipboard">Clipboard</string>
+    <string name="phone_finder">Phone Finder</string>
+    <string name="send">Send</string>
+    <string name="type_message">Type message</string>
+    <string name="share_clipboard">Share Clipboard</string>
+    <string name="ring_phone">Ring Phone</string>
+</resources>

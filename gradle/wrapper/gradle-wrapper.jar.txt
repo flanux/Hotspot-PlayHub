@@ -1,0 +1,2 @@
+GitHub Actions will generate this file automatically during build.
+If building locally, run: gradle wrapper
