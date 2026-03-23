@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
     
     private var server: Server? = null
     private var client: Client? = null
-    private var isHost = false
+    private var isHosting = false
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +24,11 @@ class MainActivity : AppCompatActivity() {
         val tvInfo = findViewById<TextView>(R.id.tvInfo)
         
         btnHost.setOnClickListener {
-            hostSession(tvInfo)
+            if (isHosting) {
+                stopHosting(btnHost, tvInfo)
+            } else {
+                startHosting(btnHost, tvInfo)
+            }
         }
         
         btnJoin.setOnClickListener {
@@ -32,47 +36,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun hostSession(tvInfo: TextView) {
+    private fun startHosting(btnHost: Button, tvInfo: TextView) {
         try {
             server = Server()
             server?.start()
-            isHost = true
+            isHosting = true
             
             val hostIp = Server.getLocalIpAddress() ?: "unknown"
             
             tvInfo.text = "Hosting on: $hostIp:8888\n\nOthers connect to this IP"
+            btnHost.text = "Stop Hosting"
             
-            Toast.makeText(this, "Hosting session on $hostIp", Toast.LENGTH_LONG).show()
-            
-            // Navigate to lobby
-            // TODO: Implement lobby fragment
+            Toast.makeText(this, "Hosting on $hostIp", Toast.LENGTH_LONG).show()
             
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to start server: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to start: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun stopHosting(btnHost: Button, tvInfo: TextView) {
+        server?.stop()
+        server = null
+        isHosting = false
+        
+        btnHost.text = "Host Session"
+        tvInfo.text = "Host creates hotspot\nOthers join WiFi and tap Join"
+        
+        Toast.makeText(this, "Stopped hosting", Toast.LENGTH_SHORT).show()
     }
     
     private fun joinSession() {
         try {
-            // Get host IP from user input
-            // TODO: Add EditText for host IP
-            val hostIp = "192.168.43.1" // Placeholder - need to get from user
-            
-            client = Client(hostIp)
+            client = Client()
             val deviceName = android.os.Build.MODEL
             val connected = client?.connect("Player", deviceName)
             
             if (connected == true) {
-                Toast.makeText(this, "Connected to host at $hostIp", Toast.LENGTH_SHORT).show()
-                
-                // Navigate to lobby
-                // TODO: Implement lobby fragment
+                Toast.makeText(this, "Connected to host", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Failed to connect to host", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to connect", Toast.LENGTH_SHORT).show()
             }
             
         } catch (e: Exception) {
-            Toast.makeText(this, "Error joining: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
     
