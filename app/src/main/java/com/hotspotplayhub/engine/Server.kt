@@ -1,6 +1,7 @@
 package com.hotspotplayhub.engine
 
 import android.util.Log
+import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -24,7 +25,31 @@ class Server(private val port: Int = 8888) {
     
     companion object {
         private const val TAG = "Server"
-        const val HOST_IP = "192.168.43.1" // Standard hotspot IP
+        
+        /**
+         * Get the device's local IP address (works for any hotspot IP)
+         */
+        fun getLocalIpAddress(): String? {
+            try {
+                val interfaces = NetworkInterface.getNetworkInterfaces()
+                while (interfaces.hasMoreElements()) {
+                    val networkInterface = interfaces.nextElement()
+                    val addresses = networkInterface.inetAddresses
+                    
+                    while (addresses.hasMoreElements()) {
+                        val address = addresses.nextElement()
+                        
+                        // Skip loopback and IPv6
+                        if (!address.isLoopbackAddress && address.hostAddress.indexOf(':') < 0) {
+                            return address.hostAddress
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting IP address", e)
+            }
+            return null
+        }
     }
     
     /**
@@ -35,13 +60,14 @@ class Server(private val port: Int = 8888) {
         router = MessageRouter(this)
         sessionManager = SessionManager(this)
         
-        Log.d(TAG, "Server starting on port $port")
+        val ip = getLocalIpAddress() ?: "unknown"
+        Log.d(TAG, "Server starting on $ip:$port")
         
         executor.submit {
             acceptConnections()
         }
         
-        Log.d(TAG, "Server started")
+        Log.d(TAG, "Server started on $ip:$port")
     }
     
     /**

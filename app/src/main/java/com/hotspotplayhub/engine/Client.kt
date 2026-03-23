@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Runs on phones that join the hotspot
  */
 class Client(
-    private val hostIp: String = Server.HOST_IP,
+    private val hostIp: String,  // Now passed as parameter, not hardcoded
     private val port: Int = 8888
 ) {
     
