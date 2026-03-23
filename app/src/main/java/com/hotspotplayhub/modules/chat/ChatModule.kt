@@ -1,3 +1,5 @@
+import com.hotspotplayhub.engine.toBytes
+
 package com.hotspotplayhub.modules.chat
 
 import android.util.Log

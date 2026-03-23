@@ -1,3 +1,4 @@
+import com.hotspotplayhub.engine.toBytes
 package com.hotspotplayhub.modules.chess
 
 import android.util.Log
